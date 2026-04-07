@@ -41,7 +41,7 @@ scripts:
     - sleep: ${{delay:0}}
     - sh: >
         bin/asprof 
-        -d ${{duration:10}} 
+        -d ${{duration:35}} 
         -f ${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}} 
         -o ${{format:flamegraph}} 
         -e ${{events:cpu}} 

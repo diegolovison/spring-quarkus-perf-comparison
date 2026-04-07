@@ -1,6 +1,7 @@
 package org.acme.config;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import io.opentelemetry.api.OpenTelemetry;
@@ -10,6 +11,7 @@ import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppen
  * Taken from https://spring.io/blog/2025/11/18/opentelemetry-with-spring-boot#exporting-logs
  */
 @Component
+@Profile("!no-otel")
 class InstallOpentelemetryAppender implements InitializingBean {
     private final OpenTelemetry openTelemetry;
 

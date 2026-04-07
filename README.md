@@ -266,7 +266,7 @@ BRANCH=main
 REPO=https://github.com/quarkusio/spring-quarkus-perf-comparison.git
 QDUP_USER=jenkins
 ./run-benchmarks.sh --repo-branch $BRANCH --scenario tuned --output-dir run --graalvm-version 25.0.2-graalce \
-  --host 127.0.0.1 --iterations 1 --java-version 25.0.2-tem --repo-url $REPO --profiler none \
+  --host 127.0.0.1 --iterations 1 --java-version 25.0.2-tem --repo-url $REPO --profiler jfr \
   --quarkus-version 3.34.1 --springboot3-version 3.5.13 --springboot4-version 4.0.5 --user $QDUP_USER \
   --wait-time 30 --run-identifier local-1 --drop-fs-caches \
   --jvm-args "-XX:+UseParallelGC -XX:+UseNUMA -Dserver.tomcat.threads.max=50 -Dserver.tomcat.threads.min-spare=50" \

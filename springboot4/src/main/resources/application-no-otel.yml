@@ -1,0 +1,28 @@
+management:
+  tracing:
+    enabled: false
+    sampling:
+      probability: 0.0
+  metrics:
+    export:
+      otlp:
+        enabled: false
+  otlp:
+    metrics:
+      export:
+        enabled: false
+    tracing:
+      export:
+        enabled: false
+  opentelemetry:
+    tracing:
+      export:
+        enabled: false
+        otlp:
+          enabled: false
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.actuate.autoconfigure.tracing.OpenTelemetryAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.tracing.otlp.OtlpAutoConfiguration
