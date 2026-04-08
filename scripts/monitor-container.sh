@@ -10,7 +10,7 @@ fi
 CONTAINER_NAME=$1
 
 # Verify the container is running initially so we don't print headers for a dead container
-if [ "$(podman inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)" != "true" ]; then
+if [ "$(sudo podman inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)" != "true" ]; then
   echo "Error: Container '$CONTAINER_NAME' is not currently running."
   exit 1
 fi
@@ -23,14 +23,14 @@ while true; do
   NOW=$(date +%T)
 
   # 1. Attempt to get the container stats (2>&1 captures errors into the variable)
-  STATS_OUTPUT=$(podman stats --no-stream --format "{{.CPUPerc}}|{{.MemPerc}}|{{.NetIO}}|{{.BlockIO}}" "$CONTAINER_NAME" 2>&1)
+  STATS_OUTPUT=$(sudo podman stats --no-stream --format "{{.CPUPerc}}|{{.MemPerc}}|{{.NetIO}}|{{.BlockIO}}" "$CONTAINER_NAME" 2>&1)
   STATUS_STATS=$?
 
   # 2. Attempt to get packet counts
-  RX=$(podman exec "$CONTAINER_NAME" cat /sys/class/net/eth0/statistics/rx_packets 2>&1)
+  RX=$(sudo podman exec "$CONTAINER_NAME" cat /sys/class/net/eth0/statistics/rx_packets 2>&1)
   STATUS_RX=$?
 
-  TX=$(podman exec "$CONTAINER_NAME" cat /sys/class/net/eth0/statistics/tx_packets 2>&1)
+  TX=$(sudo podman exec "$CONTAINER_NAME" cat /sys/class/net/eth0/statistics/tx_packets 2>&1)
   STATUS_TX=$?
 
   # If any command failed, break the loop immediately
