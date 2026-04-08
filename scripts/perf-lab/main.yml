@@ -351,6 +351,8 @@ scripts:
         - regex: "Error: Otel LGTM failed to become ready"
           then:
             - abort: Otel LGTM failed to become ready
+    - sh: podman exec -it fruits_db psql -U fruits -d fruits -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;" > ${{REPO_DIR}}/logs/database-stats-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
+    - sh: podman exec -it fruits_db psql -U fruits -d fruits -c "SHOW shared_preload_libraries;" >> ${{REPO_DIR}}/logs/database-stats-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
 
   capture-otel-data:
     - sh: ${{PROJ_REPO_DIR}}/scripts/lookup_otel_service.sh > ${{REPO_DIR}}/logs/otel-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
@@ -676,6 +678,8 @@ scripts:
         - sh: kill -15 $PID
         - sh: sleep ${{PAUSE_TIME}}
         - script: capture-otel-data
+        - sh: podman exec -it fruits_db psql -U fruits -d fruits -c "SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 100;" >> ${{REPO_DIR}}/logs/database-stats-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
+        - queue-download: ${{REPO_DIR}}/logs/database-stats-${{RUNTIMECMD.name}}-${{ITERATION}}.log
         - script: stop-test-services
     - script: state-array-calc-avg
       with:

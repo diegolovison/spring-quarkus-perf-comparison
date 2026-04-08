@@ -125,7 +125,8 @@ start_postgres() {
     -c track_counts=off \
     -c checkpoint_timeout=1h \
     -c work_mem=32MB \
-    -c maintenance_work_mem=256MB)
+    -c maintenance_work_mem=256MB \
+    -c shared_preload_libraries=pg_stat_statements)
   echo "PostgreSQL DB process: $pid"
 
   echo "Waiting for PostgreSQL to be ready..."
