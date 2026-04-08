@@ -351,6 +351,11 @@ scripts:
         - regex: "Error: Otel LGTM failed to become ready"
           then:
             - abort: Otel LGTM failed to become ready
+    - sh: sleep 5
+    - sh: ${{PROJ_REPO_DIR}}/scripts/monitor-container.sh fruits_db > ${{REPO_DIR}}/logs/monitor-container-fruits_db-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
+    - sh: ${{PROJ_REPO_DIR}}/scripts/monitor-container.sh otel_lgtm > ${{REPO_DIR}}/logs/monitor-container-otel_lgtm-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
+    - queue-download: ${{REPO_DIR}}/logs/monitor-container-fruits_db-${{RUNTIMECMD.name}}-${{ITERATION}}.log
+    - queue-download: ${{REPO_DIR}}/logs/monitor-container-otel_lgtm-${{RUNTIMECMD.name}}-${{ITERATION}}.log
 
   capture-otel-data:
     - sh: ${{PROJ_REPO_DIR}}/scripts/lookup_otel_service.sh > ${{REPO_DIR}}/logs/otel-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
@@ -613,7 +618,7 @@ scripts:
             log_file: ${{LOG_FILE}}
             log_regex: ${{APP_LOG_REGEX}}
         - wait-for: LOG_REGEX_REACHED
-        - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 2m --timeout 2m ${{TARGET_URL}} 2>&1 >${{REPO_DIR}}/logs/wrk-warmup-${{RUNTIMECMD.name}}-${{ITERATION}}.log
+        - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 2m --timeout 2m ${{TARGET_URL}} > ${{REPO_DIR}}/logs/wrk-warmup-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
         - regex: unable to connect
           then:
             - abort: unable to connect to target application
