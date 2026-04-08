@@ -151,7 +151,6 @@ start_services() {
   echo "[$(date +"%m/%d/%Y %T")]: Starting services"
   echo "-----------------------------------------"
   start_postgres
-  start_otel
 }
 
 stop_services() {
@@ -160,7 +159,6 @@ stop_services() {
   echo "[$(date +"%m/%d/%Y %T")]: Stopping services"
   echo "-----------------------------------------"
   stop_postgres
-  stop_otel
 }
 
 DB_CONTAINER_NAME="fruits_db"
