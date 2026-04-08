@@ -25,6 +25,13 @@ public class FruitController {
 		this.fruitService = fruitService;
 	}
 
+	private static final FruitDTO BASELINE = new FruitDTO(1L, "name", "description", null);
+
+	@GetMapping(path = "/baseline", produces = MediaType.APPLICATION_JSON_VALUE)
+	public FruitDTO baseline() {
+		return BASELINE;
+	}
+
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<FruitDTO> getAll() {
 		return this.fruitService.getAllFruits();
