@@ -75,11 +75,7 @@ start_otel() {
     -d \
     --rm \
     --name ${OTEL_CONTAINER_NAME} \
-    -p 4317:4317 \
-    -p 4318:4318 \
-    -p 3000:3000 \
-    -p 4040:4040 \
-    -p 9090:9090 \
+    --network=host \
     docker.io/grafana/otel-lgtm:0.12.0)
   echo "Grafana Otel LGTM process: $pid"
 
@@ -112,7 +108,7 @@ start_postgres() {
     -d \
     --rm \
     --name ${DB_CONTAINER_NAME} \
-    -p 5432:5432 \
+    --network=host \
     ghcr.io/quarkusio/postgres-17-perf:main \
     -c fsync=off \
     -c synchronous_commit=off \
