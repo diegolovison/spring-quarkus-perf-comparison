@@ -572,7 +572,7 @@ scripts:
             - regex: "^syncjfr$"
               then:
                 - queue-download: ${{REPO_DIR}}/logs/jfr.${{RUNTIMECMD.name}}-${{ITERATION}}.jfr
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:StartFlightRecording=stackdepth=1256,filename=${{REPO_DIR}}/logs/jfr.${{RUNTIMECMD.name}}-${{ITERATION}}.jfr,settings=profile,dumponexit=true -jar#'
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:FlightRecorderOptions=stackdepth=1256 -XX:StartFlightRecording=filename=${{REPO_DIR}}/logs/jfr.${{RUNTIMECMD.name}}-${{ITERATION}}.jfr,settings=profile,dumponexit=true -jar#'
                 - set-state: SYNCJFR_RUN_CMD
                 - sh: ${{SYNCJFR_RUN_CMD}} &>${{LOG_FILE}} &
               else:
