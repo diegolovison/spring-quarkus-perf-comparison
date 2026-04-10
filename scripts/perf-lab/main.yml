@@ -624,13 +624,6 @@ scripts:
         - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 30s --timeout 30s ${{TARGET_URL}} > ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
         - sh: WRK_PID=$! && echo $WRK_PID
         - set-state: WRK_PID
-        - script:
-            name: monitor-process
-            async: true
-          with:
-            name: pidstat
-            command: pidstat -u -w -t -p ${{WRK_PID}} 1
-            log_file: ${{REPO_DIR}}/logs/pidstat-wrk-${{RUNTIME_NAME}}-${{ITERATION}}.log
         - sh: wait ${{WRK_PID}}
         - sh: cat ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log | grep "Requests/sec" | awk '{print $2}'
           then:
@@ -714,47 +707,6 @@ scripts:
 
   monitor-processes:
     - set-signal: LOAD_TEST_COMPLETE 1
-    - script:
-        name: monitor-process
-        async: true
-      with:
-        name: pidstat
-        command: pidstat -u -w -t -p ${{pid}} 1
-        log_file: ${{log_dir}}/pidstat-${{runtime_name}}-${{iteration}}.log
-    - script:
-        name: monitor-process
-        async: true
-      with:
-        name: mpstat
-        command: mpstat -P ALL 1
-        log_file: ${{log_dir}}/mpstat-${{runtime_name}}-${{iteration}}.log
-    - script:
-        name: monitor-process
-        async: true
-      with:
-        name: vmstat
-        command: vmstat 1
-        log_file: ${{log_dir}}/vmstat-${{runtime_name}}-${{iteration}}.log
-    - script: monitor-postgres
-    - script: monitor-otel-lgtm
-
-  monitor-otel-lgtm:
-    - script:
-        name: monitor-process
-        async: true
-      with:
-        name: lgtm-pidstat
-        command: pidstat -u -w -p ALL -G "grafana|loki|otelcol|prometheus|tempo|pyroscope" 1
-        log_file: ${{log_dir}}/lgtm-pidstat-${{runtime_name}}-${{iteration}}.log
-
-  monitor-postgres:
-    - script:
-        name: monitor-process
-        async: true
-      with:
-        name: postgres-pidstat
-        command: pidstat -u -w -p ALL -G "postgres" 1
-        log_file: ${{log_dir}}/postgres-pidstat-${{runtime_name}}-${{iteration}}.log
 
   monitor-process:
     - queue-download: ${{log_file}}
