@@ -797,10 +797,10 @@ roles:
 #      - output-vars
       - detect-os
       - cleanup-env
+      - profiler
       - config-env
       - capture-system-info
       - ensure-requirements
-      - profiler
       - clone-repo
       - ensure-container-runtime
       - capture-repo-info
