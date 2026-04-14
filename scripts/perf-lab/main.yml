@@ -42,7 +42,7 @@ states:
   config.resources.cpu.otel: 12-14
 
   config.profiler.name: none #jfr syncjfr flamegraph
-  config.profiler.events: cpu
+  config.profiler.events: context-switches
 
   config.repo.branch: main
   config.repo.url: https://github.com/quarkusio/spring-quarkus-perf-comparison.git
@@ -589,6 +589,18 @@ scripts:
             runtime_name: ${{RUNTIMECMD.name}}
             iteration: ${{ITERATION}}
         - log: JVM_PID = ${{JVM_PID}}
+        - script:
+            name: watch-log
+            async: true
+          with:
+            log_file: ${{LOG_FILE}}
+            log_regex: ${{APP_LOG_REGEX}}
+        - wait-for: LOG_REGEX_REACHED
+        - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 2m --timeout 2m ${{TARGET_URL}} 2>&1 >${{REPO_DIR}}/logs/wrk-warmup-${{RUNTIMECMD.name}}-${{ITERATION}}.log
+        - regex: unable to connect
+          then:
+            - abort: unable to connect to target application
+        - sleep: 30s # Wait for the app to complete warmup
         - read-state: ${{config.profiler.name}}
           then:
             - regex: "^(jfr|flamegraph)$"
@@ -607,19 +619,8 @@ scripts:
                     suffix: ${{PROFILER_LOGFILE}}
                     format: ${{config.profiler.name}}
                     events: ${{config.profiler.events}}
-                    delay: 10s
-        - script:
-            name: watch-log
-            async: true
-          with:
-            log_file: ${{LOG_FILE}}
-            log_regex: ${{APP_LOG_REGEX}}
-        - wait-for: LOG_REGEX_REACHED
-        - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 2m --timeout 2m ${{TARGET_URL}} 2>&1 >${{REPO_DIR}}/logs/wrk-warmup-${{RUNTIMECMD.name}}-${{ITERATION}}.log
-        - regex: unable to connect
-          then:
-            - abort: unable to connect to target application
-        - sleep: 30s # Wait for the app to complete warmup
+                    delay: 0s
+                    duration: 30
         # run for 25 seconds and print once
         - sh: sudo /usr/share/bcc/tools/runqlat -p ${{JVM_PID}} -L 25 1 > ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
         - queue-download: ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log
