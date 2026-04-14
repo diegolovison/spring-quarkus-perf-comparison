@@ -287,7 +287,7 @@ ${JBANG_CMD} io.hyperfoil.tools:qDup:0.10.8 \
     -S config.quarkus.version=${QUARKUS_VERSION} \
     -S config.springboot3.native_build_options="${NATIVE_SPRING3_BUILD_OPTIONS}" \
     -S config.springboot4.native_build_options="${NATIVE_SPRING4_BUILD_OPTIONS}" \
-    -S config.profiler.events=cpu \
+    -S config.profiler.events=context-switches \
     -S config.repo.branch=${SCM_REPO_BRANCH} \
     -S config.repo.url=${SCM_REPO_URL} \
     -S config.repo.scenario=${SCENARIO} \
