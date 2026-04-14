@@ -43,7 +43,7 @@ scripts:
     - log: after sleep
     - sh: >
         bin/asprof 
-        -l debug
+        -L debug
         -d ${{duration:10}} 
         -f ${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}} 
         -o ${{format:flamegraph}} 
