@@ -49,5 +49,6 @@ scripts:
         -e ${{events:cpu}} 
         ${{="${{enableTotal : }}".toLowerCase() == "true" ? "--total" : ""}} 
         --title ${{title:async-profiler}} 
-        ${{pid}} &
+        ${{pid}} > ${{REPO_DIR}}/logs/asprof-${{format:flamegraph}}.${{suffix:html}}.log  2>&1 &
+    - queue-download: ${{REPO_DIR}}/logs/asprof-${{format:flamegraph}}.${{suffix:html}}.log
     - queue-download: ${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}}
