@@ -620,7 +620,6 @@ scripts:
                     value: "${{RUNTIMECMD.name}}-${{ITERATION}}.${{= '${{config.profiler.name}}' == 'jfr' ? 'jfr' : 'html' }}"
                 - script:
                     name: async-profiler-run
-                    async: true
                   with:
                     wait_start: LOAD_STEADY_STATE_START_BEFORE
                     pid: ${{JVM_PID}}
