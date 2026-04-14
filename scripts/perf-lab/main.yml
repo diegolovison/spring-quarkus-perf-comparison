@@ -503,7 +503,9 @@ scripts:
           with:
             array: RUN.output.results.${{RUNTIMECMD.name}}.startup.timings
             value: ${{START_TIME}}
+        - log: before sleep
         - sh: sleep ${{PAUSE_TIME}}
+        - log: after sleep
         - script: stop-test-services
     - script: state-array-calc-avg
       with:
@@ -521,7 +523,9 @@ scripts:
         - script: sync-drop-fs-cache
         - sh: ${{RUNTIMECMD.runCmd}} &>${{REPO_DIR}}/logs/measure-rss-${{RUNTIMECMD.name}}-${{ITERATION}}.log &
         - sh: APP_PID=$!
+        - log: before sleep
         - sh: sleep ${{PAUSE_TIME}}
+        - log: after sleep
         - sh: pmap -x $APP_PID | grep total | awk '{print $4}'
           then:
             - set-state: RSS_STARTUP
@@ -538,7 +542,9 @@ scripts:
             array: RUN.output.results.${{RUNTIMECMD.name}}.rss.firstRequest
             value: ${{= ${{FIRST_REQUEST}}/1024 }}
         - sh: kill -15 $APP_PID
+        - log: before sleep
         - sh: sleep ${{PAUSE_TIME}}
+        - log: after sleep
         - script: stop-test-services
     - script: state-array-calc-avg
       with:
@@ -600,7 +606,9 @@ scripts:
         - regex: unable to connect
           then:
             - abort: unable to connect to target application
+        - log: before sleep
         - sleep: 30s # Wait for the app to complete warmup
+        - log: after sleep
         - read-state: ${{config.profiler.name}}
           then:
             - regex: "^(jfr|flamegraph)$"
@@ -625,7 +633,9 @@ scripts:
         - sh: sudo /usr/share/bcc/tools/runqlat -p ${{JVM_PID}} -L 35 1 > ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
         - queue-download: ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log
         - signal: LOAD_STEADY_STATE_START_BEFORE
+        - log: before sleep
         - sh: sleep 5
+        - log: after sleep
         - signal: LOAD_STEADY_STATE_START
         - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 30s --timeout 30s ${{TARGET_URL}} > ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
         - sh: WRK_PID=$! && echo $WRK_PID
@@ -638,7 +648,9 @@ scripts:
             command: pidstat -u -w -t -p ${{WRK_PID}} 1
             log_file: ${{REPO_DIR}}/logs/pidstat-wrk-${{RUNTIME_NAME}}-${{ITERATION}}.log
         - sh: wait ${{WRK_PID}}
+        - log: before sleep
         - sleep: 30s # Wait for the app to calm down -> it can contain a lot of context switches when pausing, which makes it hard to analyse
+        - log: after sleep
         - sh: cat ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log | grep "Requests/sec" | awk '{print $2}'
           then:
             - set-state: THROUGHPUT
@@ -683,7 +695,9 @@ scripts:
             value: ${{= ${{THROUGHPUT}}/${{RSS}}*1024 }}
         - signal: LOAD_TEST_COMPLETE
         - sh: kill -15 $PID
+        - log: before sleep
         - sh: sleep ${{PAUSE_TIME}}
+        - log: after sleep
         - script: capture-otel-data
         - script: stop-test-services
     - script: state-array-calc-avg

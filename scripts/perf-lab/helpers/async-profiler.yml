@@ -38,7 +38,9 @@ scripts:
   async-profiler-run:
     - sh: cd ${{ASYNC_PROFILER_DIR}}
     - wait-for: ${{wait_start:}} # don't wait by default
+    - log: before sleep
     - sleep: ${{delay:0}}
+    - log: after sleep
     - sh: >
         bin/asprof 
         -d ${{duration:10}} 
