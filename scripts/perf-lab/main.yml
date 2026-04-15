@@ -55,8 +55,7 @@ states:
   RUN.WRK_BIN: ${{LOAD_GEN_CMD_PREFIX}} jbang -R -XX:+UseNUMA wrk@hyperfoil
 
   PAUSE_TIME: 5
-  PROFILER_JVM_ARGS:
-  BASE_JAVA_CMD: ${{APP_CMD_PREFIX}} java ${{config.jvm.memory}} ${{config.jvm.args}} ${{PROFILER_JVM_ARGS}}
+  BASE_JAVA_CMD: ${{APP_CMD_PREFIX}} java ${{config.jvm.memory}} ${{config.jvm.args}}
   TESTS : [measure-time-to-first-request, measure-rss, run-load-test]
   RUNTIMES: [quarkus3-jvm, quarkus3-virtual, quarkus3-native, spring3-jvm, spring3-virtual, spring3-native, spring4-jvm, spring4-virtual, spring4-native]
   TARGET_URL: http://localhost:8080/fruits
@@ -72,7 +71,7 @@ states:
       updateVersion: ${{config.quarkus.version}}
       buildRequiresTestServices: false
       buildCmd: "${{APP_CMD_PREFIX}} ./mvnw ${{config.quarkus.build_config_args}} clean package -DskipTests"
-      runCmd: "${{BASE_JAVA_CMD}} -jar ${{RUNTIME_BUILD_DIR}}/quarkus-app/quarkus-run.jar"
+      runCmd: "${{BASE_JAVA_CMD}} -jar PROFILER_JVM_ARGS ${{RUNTIME_BUILD_DIR}}/quarkus-app/quarkus-run.jar"
       logFileStartedRegex: ".*quarkus3.+started in.*"
     - name: quarkus3-leyden
       type: jvm
@@ -171,7 +170,7 @@ states:
       updateVersion: ${{config.springboot4.version}}
       buildRequiresTestServices: false
       buildCmd: "${{APP_CMD_PREFIX}} ./mvnw clean package -DskipTests"
-      runCmd: "${{BASE_JAVA_CMD}} -jar ${{RUNTIME_BUILD_DIR}}/springboot4.jar"
+      runCmd: "${{BASE_JAVA_CMD}} -jar PROFILER_JVM_ARGS ${{RUNTIME_BUILD_DIR}}/springboot4.jar"
       logFileStartedRegex: ".*Started SpringBoot4Application in.+seconds.*"
     - name: spring4-leyden
       type: jvm
@@ -580,11 +579,27 @@ scripts:
             - regex: "^syncjfr$"
               then:
                 - queue-download: ${{REPO_DIR}}/logs/jfr.${{RUNTIMECMD.name}}-${{ITERATION}}.jfr
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:StartFlightRecording=filename=${{REPO_DIR}}/logs/jfr.${{RUNTIMECMD.name}}-${{ITERATION}}.jfr,settings=profile,dumponexit=true -jar#'
-                - set-state: SYNCJFR_RUN_CMD
-                - sh: ${{SYNCJFR_RUN_CMD}} &>${{LOG_FILE}} &
-              else:
-                - sh: ${{RUNTIMECMD.runCmd}} &>${{LOG_FILE}} &
+                - set-state: >
+                    PROFILER_JVM_ARGS -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -XX:StartFlightRecording=filename=${{REPO_DIR}}/logs/jfr.${{RUNTIME.name}}-${{ITERATION}}.jfr,settings=profile,dumponexit=true
+
+            - regex: "^(jfr|flamegraph)$"
+              then:
+                - script: async-profiler-install
+                - script: async-profiler-configure
+                - set-state:
+                    key: PROFILER_LOGFILE
+                    value: "${{RUNTIME_NAME}}-${{ITERATION}}.${{= '${{config.profiler.name}}' == 'jfr' ? 'jfr' : 'html' }}"
+                - script:
+                    name: async-profiler-setup
+                  with:
+                    suffix: ${{PROFILER_LOGFILE}}
+                    format: ${{config.profiler.name}}
+                    events: ${{config.profiler.events}}
+        # workaround -> Bash and qDup variables do not act like formulas or dynamic references. When you set a variable, bash evaluates it immediately and stores the final static result.
+        # sed is using | as a delimiter
+        - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's|PROFILER_JVM_ARGS|${{PROFILER_JVM_ARGS}}|'
+        - set-state: WORKAROUND_runCmd
+        - sh: ${{WORKAROUND_runCmd}} &>${{LOG_FILE}} &
         - sh: PID=$!
         - sh: echo $PID
         - set-state: JVM_PID

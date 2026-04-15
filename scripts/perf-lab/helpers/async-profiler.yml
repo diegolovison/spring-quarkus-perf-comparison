@@ -33,23 +33,7 @@ scripts:
     - sh: cd ${{BASE_DIR}}
     - script: download-unpack-async-profiler
 
-  #waits for ${{WAIT_START}} then ${{DELAY}}, creates a profile using the configured parameters then downloads it immediately
-  #works with 3.x, not 2.x
-  async-profiler-run:
-    - sh: cd ${{ASYNC_PROFILER_DIR}}
-    - wait-for: ${{wait_start:}} # don't wait by default
-    - log: before sleep
-    - sleep: ${{delay:0}}
-    - log: after sleep
-    - sh: >
-        bin/asprof 
-        -L debug
-        -d ${{duration:10}} 
-        -f ${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}} 
-        -o ${{format:flamegraph}} 
-        -e ${{events:cpu}} 
-        ${{="${{enableTotal : }}".toLowerCase() == "true" ? "--total" : ""}} 
-        --title ${{title:async-profiler}} 
-        ${{pid}} > ${{REPO_DIR}}/logs/asprof-${{format:flamegraph}}.${{suffix:html}}.log  2>&1 &
-    - queue-download: ${{REPO_DIR}}/logs/asprof-${{format:flamegraph}}.${{suffix:html}}.log
+  async-profiler-setup:
+    - set-state: >
+        PROFILER_JVM_ARGS -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -agentpath:${{ASYNC_PROFILER_DIR}}/lib/libasyncProfiler.so=start,event=${{events:cpu}},title=${{title:async-profiler}},file=${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}}${{="${{enableTotal : }}".toLowerCase() == "true" ? ",total" : ""}}
     - queue-download: ${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}}
