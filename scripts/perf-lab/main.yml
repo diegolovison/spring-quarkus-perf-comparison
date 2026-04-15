@@ -617,6 +617,9 @@ scripts:
             log_file: ${{LOG_FILE}}
             log_regex: ${{APP_LOG_REGEX}}
         - wait-for: LOG_REGEX_REACHED
+        - log: before sleep
+        - sleep: 30s # Wait for the app to complete warmup
+        - log: after sleep
         - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 2m --timeout 2m ${{TARGET_URL}} > ${{REPO_DIR}}/logs/wrk-warmup-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
         - regex: unable to connect
           then:
