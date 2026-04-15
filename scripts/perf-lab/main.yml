@@ -644,8 +644,8 @@ scripts:
                     delay: 0s
                     duration: 35
         # run for 25 seconds and print once
-        - sh: sudo /usr/share/bcc/tools/runqlat -p ${{JVM_PID}} -L 35 1 > ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
-        - queue-download: ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log
+        # - sh: sudo /usr/share/bcc/tools/runqlat -p ${{JVM_PID}} -L 35 1 > ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
+        # - queue-download: ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log
         - signal: LOAD_STEADY_STATE_START_BEFORE
         - log: before sleep
         - sh: sleep 5
