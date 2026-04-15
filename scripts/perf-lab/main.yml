@@ -665,7 +665,7 @@ scripts:
         - log: before sleep
         - sleep: 30s # Wait for the app to calm down -> it can contain a lot of context switches when pausing, which makes it hard to analyse
         - log: after sleep
-        - sh: cat ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log | grep "Requests/sec" | awk '{print $2}'
+        - sh: cat ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log | grep "Requests/sec" | awk '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
           then:
             - set-state: THROUGHPUT
         - script: state-array-push
