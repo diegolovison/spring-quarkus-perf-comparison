@@ -1,6 +1,8 @@
 name: state-array functions
 scripts:
   state-array-push:
+    - log: key '${{array}}'
+    - log: value '${{value}}'
     - set-state:
         key: ${{array}}
         value: ${{=[...${{${{array}}¬[]}}, ${{value}}]}}
