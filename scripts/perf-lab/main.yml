@@ -624,32 +624,9 @@ scripts:
         - log: before sleep
         - sleep: 30s # Wait for the app to complete warmup
         - log: after sleep
-        - read-state: ${{config.profiler.name}}
-          then:
-            - regex: "^(jfr|flamegraph)$"
-              then:
-                - script: async-profiler-install
-                - script: async-profiler-configure
-                - set-state:
-                    key: PROFILER_LOGFILE
-                    value: "${{RUNTIMECMD.name}}-${{ITERATION}}.${{= '${{config.profiler.name}}' == 'jfr' ? 'jfr' : 'html' }}"
-                - script:
-                    name: async-profiler-run
-                  with:
-                    wait_start: LOAD_STEADY_STATE_START_BEFORE
-                    pid: ${{JVM_PID}}
-                    suffix: ${{PROFILER_LOGFILE}}
-                    format: ${{config.profiler.name}}
-                    events: ${{config.profiler.events}}
-                    delay: 0s
-                    duration: 35
         # run for 25 seconds and print once
         # - sh: sudo /usr/share/bcc/tools/runqlat -p ${{JVM_PID}} -L 35 1 > ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
         # - queue-download: ${{REPO_DIR}}/logs/runqlat-${{RUNTIMECMD.name}}-${{ITERATION}}.log
-        - signal: LOAD_STEADY_STATE_START_BEFORE
-        - log: before sleep
-        - sh: sleep 5
-        - log: after sleep
         - signal: LOAD_STEADY_STATE_START
         - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 30s --timeout 30s ${{TARGET_URL}} > ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1 &
         - sh: WRK_PID=$! && echo $WRK_PID
