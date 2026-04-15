@@ -136,7 +136,7 @@ if __name__ == "__main__":
             print(f"Usage: python3 {sys.argv[0]} <pidstat-log-1> [<pidstat-log-2> ...]")
             sys.exit(1)
 
-    root_folder = '/home/dlovison/Downloads/244'
+    root_folder = '/home/dlovison/Downloads/246'
 
     # Process all files passed as arguments
     for logfile in [f'{root_folder}/pidstat-quarkus3-jvm-0-steady-state.log', f'{root_folder}/pidstat-spring4-jvm-0-steady-state.log']:
