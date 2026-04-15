@@ -599,7 +599,7 @@ scripts:
         # sed is using | as a delimiter
         - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's|PROFILER_JVM_ARGS|${{PROFILER_JVM_ARGS}}|'
         - set-state: WORKAROUND_runCmd
-        - sh: ${{WORKAROUND_runCmd}} &>${{LOG_FILE}} &
+        - sh: ${{WORKAROUND_runCmd}} > ${{LOG_FILE}} 2>&1 &
         - sh: PID=$!
         - sh: echo $PID
         - set-state: JVM_PID
@@ -617,7 +617,7 @@ scripts:
             log_file: ${{LOG_FILE}}
             log_regex: ${{APP_LOG_REGEX}}
         - wait-for: LOG_REGEX_REACHED
-        - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 2m --timeout 2m ${{TARGET_URL}} 2>&1 >${{REPO_DIR}}/logs/wrk-warmup-${{RUNTIMECMD.name}}-${{ITERATION}}.log
+        - sh: ${{RUN.WRK_BIN}} -t 2 -c 100 -d 2m --timeout 2m ${{TARGET_URL}} > ${{REPO_DIR}}/logs/wrk-warmup-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
         - regex: unable to connect
           then:
             - abort: unable to connect to target application
