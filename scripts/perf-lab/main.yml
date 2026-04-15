@@ -688,7 +688,7 @@ scripts:
             array: RUN.output.results.${{RUNTIMECMD.name}}.load.throughputDensity
             value: ${{= ${{THROUGHPUT}}/${{RSS}}*1024 }}
         - signal: LOAD_TEST_COMPLETE
-        - sh: kill -15 $PID
+        - sh: kill -15 ${{JVM_PID}}
         - log: before sleep
         - sh: sleep ${{PAUSE_TIME}}
         - log: after sleep
