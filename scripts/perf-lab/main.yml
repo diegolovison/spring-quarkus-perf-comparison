@@ -668,6 +668,8 @@ scripts:
         - sh: cat ${{REPO_DIR}}/logs/wrk-${{RUNTIMECMD.name}}-${{ITERATION}}.log | grep "Requests/sec" | awk '{print $2}'
           then:
             - set-state: THROUGHPUT
+        - log: ${{THROUGHPUT}}
+        - log: $${{RUN.output.results.${{RUNTIMECMD.name}}.load.throughput}}
         - script: state-array-push
           with:
             array: RUN.output.results.${{RUNTIMECMD.name}}.load.throughput
