@@ -52,7 +52,7 @@ states:
   APP_CMD_PREFIX: taskset --cpu-list ${{config.resources.cpu.app}}
   LOAD_GEN_CMD_PREFIX: taskset --cpu-list ${{config.resources.cpu.load_generator}}
   MONITOR_CMD_PREFIX: taskset --cpu-list ${{config.resources.cpu.monitor}}
-  RUN.WRK_BIN: ${{LOAD_GEN_CMD_PREFIX}} wrk
+  RUN.WRK_BIN: ${{LOAD_GEN_CMD_PREFIX}} jbang -R -XX:+UseNUMA wrk@hyperfoil
 
   PAUSE_TIME: 5
   BASE_JAVA_CMD: ${{APP_CMD_PREFIX}} java ${{config.jvm.memory}} ${{config.jvm.args}}
