@@ -281,6 +281,7 @@ scripts:
     - sh: sudo journalctl -u chronyd -n 5 --no-pager >> /tmp/chronyd.log 2>&1
     - sh: echo "----start chronyd----" >> /tmp/chronyd.log 2>&1
     - sh: sudo systemctl start chronyd >> /tmp/chronyd.log 2>&1
+    - sh: sudo systemctl status chronyd >> /tmp/chronyd.log 2>&1
     - sh: echo "----finished----" >> /tmp/chronyd.log 2>&1
     - download: /tmp/chronyd.log
 
@@ -810,6 +811,7 @@ scripts:
     - sh: sudo systemctl status chronyd --no-pager >> /tmp/chronyd.log 2>&1
     - sh: echo "----stop chronyd----" >> /tmp/chronyd.log 2>&1
     - sh: sudo systemctl stop chronyd >> /tmp/chronyd.log 2>&1
+    - sh: sudo systemctl status chronyd >> /tmp/chronyd.log 2>&1
     - sh: echo "----finished the setup----" >> /tmp/chronyd.log 2>&1
     - sh: sudo tuned-adm profile benchmark
     - sh: tuned-adm active
