@@ -806,7 +806,7 @@ scripts:
     - sh: echo "----starting----" > /tmp/chronyd.log 2>&1
     - sh: echo "----journalctl -u chronyd -n 5 --no-pager----" > /tmp/chronyd.log 2>&1
     - sh: sudo journalctl -u chronyd -n 5 --no-pager >> /tmp/chronyd.log 2>&1
-    - sh: echo "----status chronyd----" > /tmp/chronyd.log 2>&1
+    - sh: echo "----status chronyd----" >> /tmp/chronyd.log 2>&1
     - sh: sudo systemctl status chronyd --no-pager >> /tmp/chronyd.log 2>&1
     - sh: echo "----stop chronyd----" >> /tmp/chronyd.log 2>&1
     - sh: sudo systemctl stop chronyd >> /tmp/chronyd.log 2>&1
