@@ -813,7 +813,7 @@ scripts:
     - sh: sudo systemctl stop chronyd >> /tmp/chronyd.log 2>&1
     - sh: sudo systemctl status chronyd >> /tmp/chronyd.log 2>&1
     - sh: echo "----finished the setup----" >> /tmp/chronyd.log 2>&1
-    - sh: sudo tuned-adm profile benchmark
+    - sh: sudo tuned-adm profile network-latency
     - sh: tuned-adm active
 
 hosts:
