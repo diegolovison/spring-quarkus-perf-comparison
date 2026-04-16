@@ -794,7 +794,7 @@ scripts:
 #    - queue-download: ${{REPO_DIR}}/logs/*
 
   profiler:
-    - sh: sudo tuned-adm profile benchmark
+    - sh: sudo tuned-adm profile network-latency
     - sh: tuned-adm active
 
 hosts:
