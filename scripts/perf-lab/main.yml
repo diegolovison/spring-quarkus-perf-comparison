@@ -274,6 +274,10 @@ scripts:
     - sh: rm -Rf ${{PROJ_REPO_DIR}}
     - sh: sudo tuned-adm profile network-latency
     - sh: tuned-adm active
+    - sh: sudo systemctl status chronyd --no-pager >> /tmp/chronyd.log 2>&1
+    - sh: sudo journalctl -u chronyd -n 5 --no-pager >> /tmp/chronyd.log 2>&1
+    - sh: sudo systemctl start chronyd >> /tmp/chronyd.log 2>&1
+    - download: /tmp/chronyd.log
 
   config-env:
     - sh: rm -Rf ${{REPO_DIR}}/logs
@@ -794,6 +798,9 @@ scripts:
 #    - queue-download: ${{REPO_DIR}}/logs/*
 
   profiler:
+    - sh: sudo journalctl -u chronyd -n 5 --no-pager > /tmp/chronyd.log 2>&1
+    - sh: sudo systemctl status chronyd --no-pager >> /tmp/chronyd.log 2>&1
+    - sh: sudo systemctl stop chronyd >> /tmp/chronyd.log 2>&1
     - sh: sudo tuned-adm profile benchmark
     - sh: tuned-adm active
 
