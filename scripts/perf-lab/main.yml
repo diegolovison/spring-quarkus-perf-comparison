@@ -614,7 +614,7 @@ scripts:
 
         - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's|PROFILER_JVM_ARGS|${{PROFILER_JVM_ARGS}}|'
         - set-state: WORKAROUND_runCmd
-        - sh: ${{WORKAROUND_runCmd}} > ${{LOG_FILE}} 2>&1
+        - sh: ${{WORKAROUND_runCmd}} > ${{LOG_FILE}} 2>&1 &
         - sh: PID=$!
         - sh: echo $PID
         - set-state: JVM_PID
