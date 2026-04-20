@@ -35,5 +35,5 @@ scripts:
 
   async-profiler-setup:
     - set-state: >
-        PROFILER_JVM_ARGS -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -agentpath:${{ASYNC_PROFILER_DIR}}/lib/libasyncProfiler.so=start,event=${{events:cpu}},clock=monotonic,title=${{title:async-profiler}},file=${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}}${{="${{enableTotal : }}".toLowerCase() == "true" ? ",total" : ""}}
+        PROFILER_JVM_ARGS -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -agentpath:${{ASYNC_PROFILER_DIR}}/lib/libasyncProfiler.so=start,event=${{events:cpu}},title=${{title:async-profiler}},file=${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}}${{="${{enableTotal : }}".toLowerCase() == "true" ? ",total" : ""}}
     - queue-download: ${{REPO_DIR}}/logs/${{format:flamegraph}}.${{suffix:html}}
