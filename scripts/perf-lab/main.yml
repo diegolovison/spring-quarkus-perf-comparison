@@ -597,7 +597,7 @@ scripts:
               then:
                 - queue-download: ${{REPO_DIR}}/logs/jfr.${{RUNTIMECMD.name}}-${{ITERATION}}.jfr
                 - set-state: >
-                    PROFILER_JVM_ARGS -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -XX:StartFlightRecording=filename=${{REPO_DIR}}/logs/jfr.${{RUNTIME.name}}-${{ITERATION}}.jfr,settings=profile,dumponexit=true
+                    PROFILER_JVM_ARGS -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -XX:FlightRecorderOptions=stackdepth=1256 -XX:StartFlightRecording=filename=${{REPO_DIR}}/logs/jfr.${{RUNTIMECMD.name}}-${{ITERATION}}.jfr,settings=profile,dumponexit=true,maxsize=1g
             - regex: "^(jfr|flamegraph)$"
               then:
                 - script: async-profiler-install
