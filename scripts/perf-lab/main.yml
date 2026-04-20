@@ -43,7 +43,7 @@ states:
   config.resources.cpu.otel: 12-14
 
   config.profiler.name: none #jfr syncjfr flamegraph
-  config.profiler.events: cpu
+  config.profiler.events: context-switches
 
   config.repo.branch: main
   config.repo.url: https://github.com/quarkusio/spring-quarkus-perf-comparison.git
