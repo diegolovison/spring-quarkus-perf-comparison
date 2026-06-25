@@ -1,3 +1,13 @@
+server:
+  tomcat:
+
+    # Increase max Keep-Alive requests per connection
+    max-keep-alive-requests: -1
+
+    # Tomcat outlasts Hyperfoil's 30s frozen cooldown.
+    # This prevents Tomcat from dropping the idle connections before the load test starts.
+    connection-timeout: 45000
+
 spring:
   datasource:
     username: fruits
