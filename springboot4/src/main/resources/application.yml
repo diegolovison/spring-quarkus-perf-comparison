@@ -63,7 +63,7 @@ management:
 server:
   tomcat:
     threads:
-      max: 400
+      max: 1000
     max-connections: 10000
     accept-count: 1000
     max-keep-alive-requests: -1
