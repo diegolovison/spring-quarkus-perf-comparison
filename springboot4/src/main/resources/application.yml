@@ -62,4 +62,9 @@ management:
 # for a conversation about why this setting is set this way
 server:
   tomcat:
+    threads:
+      max: 400
+    max-connections: 10000
+    accept-count: 1000
     max-keep-alive-requests: -1
+    connection-timeout: 45000
