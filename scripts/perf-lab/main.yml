@@ -358,10 +358,6 @@ scripts:
           else:
             - abort: start-test-services (infra.sh) failed with a non-zero exit code
 
-  capture-otel-data:
-    - sh: ${{PROJ_REPO_DIR}}/scripts/lookup_otel_service.sh > ${{REPO_DIR}}/logs/otel-${{RUNTIMECMD.name}}-${{ITERATION}}.log 2>&1
-    - queue-download: ${{REPO_DIR}}/logs/otel-${{RUNTIMECMD.name}}-${{ITERATION}}.log
-
   stop-test-services:
     - sh: ${{PROJ_REPO_DIR}}/scripts/infra.sh -d
 
@@ -630,15 +626,13 @@ scripts:
             log_regex: ${{APP_LOG_REGEX}}
         - wait-for: LOG_REGEX_REACHED
         - sh: |
-            ${{LOAD_GEN_CMD_PREFIX}} jbang \
+            ${{LOAD_GEN_CMD_PREFIX}} java -XX:+UseNUMA \
               -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
               -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
-              -R \
-              -XX:+UseNUMA \
-              run@hyperfoil \
-                -d ${{RUNTIME_NAME}}-${{ITERATION}} \
-                -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
-                ${{LOAD_TESTS_SCRIPTS_DIR}}/load-test-fixed-threads-read-all.hf.yml &>${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log &
+              -jar /home/dlovison/github/Hyperfoil/Hyperfoil/clustering/target/run.jar \
+              -d ${{RUNTIME_NAME}}-${{ITERATION}} \
+              -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+              ${{LOAD_TESTS_SCRIPTS_DIR}}/load-test-fixed-threads-read-all.hf.yml &>${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log &
         - sh: HF_PID=$! && echo $HF_PID
           then:
             - set-state: HF_PID
@@ -744,7 +738,6 @@ scripts:
         - signal: LOAD_TEST_COMPLETE
         - sh: kill -15 $PID
         - sh: sleep ${{PAUSE_TIME}}
-        - script: capture-otel-data
         - script: stop-test-services
     - script: state-array-calc-avg
       with:

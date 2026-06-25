@@ -72,6 +72,7 @@ phases:
                       timeout: !param WARMUP_REQUEST_TIMEOUT 2m
                       headers:
                         accept: application/json
+                - thinkTime: !param THINK_TIME 200ms
 
   - cooldown:
       noop:
@@ -110,3 +111,4 @@ phases:
                       timeout: !param LOAD_REQUEST_TIMEOUT 30s
                       headers:
                         accept: application/json
+                - thinkTime: !param THINK_TIME 200ms

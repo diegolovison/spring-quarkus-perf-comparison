@@ -230,6 +230,7 @@ Execute: `sudo visudo`
 jenkins ALL=(root) NOPASSWD: /usr/bin/tee /proc/sys/vm/drop_caches
 jenkins ALL=(root) NOPASSWD: /usr/bin/tee /proc/sys/kernel/perf_event_paranoid
 jenkins ALL=(root) NOPASSWD: /usr/bin/tee /proc/sys/kernel/kptr_restrict
+jenkins ALL=(root) NOPASSWD: /usr/bin/systemctl status firewalld
 ```
 
 ## Running a Benchmark Example
@@ -239,8 +240,8 @@ your environment:
 
 ```bash
 cd scripts/perf-lab
-BRANCH=main
-REPO=https://github.com/quarkusio/spring-quarkus-perf-comparison.git
+BRANCH=ootb
+REPO=/home/dlovison/github/quarkusio/spring-quarkus-perf-comparison
 QDUP_USER=jenkins
 ./run-benchmarks.sh --repo-branch $BRANCH --scenario tuned --output-dir run --graalvm-version 25.0.2-graalce \
   --host 127.0.0.1 --iterations 1 --java-version 25.0.2-tem --repo-url $REPO --profiler none \
@@ -248,8 +249,12 @@ QDUP_USER=jenkins
   --wait-time 30 --run-identifier local-1 --drop-fs-caches \
   --jvm-args "-XX:+UseNUMA -Dserver.tomcat.threads.max=50 -Dserver.tomcat.threads.min-spare=50" \
   --description "Local Test" --cpus-app 0,1,2,3 --cpus-db 4,5,6 --cpus-first-request 7 --cpus-load-gen 7,8,9 \
-  --cpus-monitoring 16 --cpus-otel 10,11,12 --jvm-memory "-Xmx512m -Xms512m" --runtimes quarkus3-jvm,spring4-jvm \
+  --cpus-monitoring 16 --jvm-memory "-Xmx512m -Xms512m" --runtimes spring4-jvm \
   --tests run-load-test
+```
+
+```text
+jq -r '.results | to_entries[] | "\(.key): \(.value.load.avThroughput // "No load data available")"' run/target-host/metrics.json
 ```
 
 ### Important Configuration Notes
