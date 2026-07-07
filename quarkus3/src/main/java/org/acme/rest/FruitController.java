@@ -1,5 +1,6 @@
 package org.acme.rest;
 
+import java.util.Arrays;
 import java.util.List;
 
 import jakarta.transaction.Transactional;
@@ -25,10 +26,14 @@ public class FruitController {
 		this.fruitRepository = fruitRepository;
 	}
 
+	private static final List<Fruit> FRUITS = Arrays.asList(
+			new Fruit(1L, "apple", "desc apple"),
+			new Fruit(2L, "orange", "desc orange"));
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<Fruit> getAll() {
-		return this.fruitRepository.listAll();
+		return FRUITS;
 	}
 
 	@GET
