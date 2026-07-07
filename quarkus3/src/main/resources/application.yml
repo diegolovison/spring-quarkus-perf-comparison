@@ -5,4 +5,4 @@ quarkus:
     jackson:
       optimization:
         # See https://quarkus.io/blog/quarkus-metaprogramming/
-        enable-reflection-free-serializers: false
+        enable-reflection-free-serializers: true
