@@ -1,4 +1,7 @@
 quarkus:
+  datasource:
+    devservices:
+      image-name: ghcr.io/quarkusio/postgres-17-perf:main
   jackson:
     serialization-inclusion: non-empty
   rest:
@@ -6,3 +9,11 @@ quarkus:
       optimization:
         # See https://quarkus.io/blog/quarkus-metaprogramming/
         enable-reflection-free-serializers: true
+
+"%prod":
+  quarkus:
+    datasource:
+      username: fruits
+      password: fruits
+      jdbc:
+        url: jdbc:postgresql://localhost:5432/fruits
