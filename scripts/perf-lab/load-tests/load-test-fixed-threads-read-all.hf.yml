@@ -97,7 +97,7 @@ phases:
   - loadTest:
       always:
         users: !param CONNECTIONS 100
-        duration: !param LOAD_DURATION 30s
+        duration: !param LOAD_DURATION 60s
         maxDuration: !param LOAD_MAX_DURATION 1m
         startAfterStrict: logStart
         scenario:
