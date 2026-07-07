@@ -22,23 +22,21 @@ public class FruitService {
         String sql = "SELECT id, name, description FROM fruits ORDER BY id";
         List<FruitDTO> fruits = new ArrayList<>();
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Long id = rs.getLong("id");
-                String name = rs.getString("name");
-                String description = rs.getString("description");
-                fruits.add(new FruitDTO(id, name, description, null));
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setFetchSize(100);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Long id = rs.getLong("id");
+                        String name = rs.getString("name");
+                        String description = rs.getString("description");
+                        fruits.add(new FruitDTO(id, name, description, null));
+                    }
+                    return fruits;
+                }
             }
-
         } catch (SQLException e) {
             throw new RuntimeException("Error executing JDBC query for fruits", e);
         }
-
-        return fruits;
     }
-
-
 }
