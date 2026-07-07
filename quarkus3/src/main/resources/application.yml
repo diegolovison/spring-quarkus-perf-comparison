@@ -1,7 +1,7 @@
 quarkus:
   thread-pool:
-    core-threads: 4
-    max-threads: 4
+    core-threads: 10
+    max-threads: 10
   datasource:
     devservices:
       image-name: ghcr.io/quarkusio/postgres-17-perf:main
