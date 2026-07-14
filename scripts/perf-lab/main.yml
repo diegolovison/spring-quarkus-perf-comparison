@@ -606,6 +606,7 @@ scripts:
             async: true
           with:
             delay: 5s
+            duration: 100
         - script:
             name: watch-log
             async: true
