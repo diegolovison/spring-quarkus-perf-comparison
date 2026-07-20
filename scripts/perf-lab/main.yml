@@ -72,7 +72,7 @@ states:
       updateScript: update-quarkus-version
       updateVersion: ${{config.quarkus.version}}
       buildRequiresTestServices: false
-      buildCmd: "${{APP_CMD_PREFIX}} ./mvnw ${{config.quarkus.build_config_args}} clean package -DskipTests"
+      buildCmd: "${{APP_CMD_PREFIX}} ./mvnw ${{config.quarkus.build_config_args}} clean package -DskipTests -Dquarkus.package.jar.aot.enabled=true -Dsurefire.excludes='**/*'"
       runCmd: "${{BASE_JAVA_CMD}} -jar ${{RUNTIME_BUILD_DIR}}/quarkus-app/quarkus-run.jar"
       logFileStartedRegex: ".*quarkus3.+started in.*"
     - name: quarkus3-leyden
@@ -573,7 +573,8 @@ scripts:
     - set-state:
         key: APP_LOG_REGEX
         value: ${{RUNTIMECMD.logFileStartedRegex}}
-    - for-each: ITERATION ${{=[...Array(${{config.num_iterations}}).keys()]}}
+    - set-state: AOT_OUTPUT_FOLDER /tmp/aot-output-folder
+    - for-each: ITERATION "0 1 2"
       then:
         - set-state:
             key: LOG_FILE
@@ -586,17 +587,29 @@ scripts:
         - script: sync-drop-fs-cache
         - set-signal: LOAD_STEADY_STATE_START 1
         - set-signal: LOG_REGEX_REACHED 1
-        - read-state: ${{config.profiler.name}}
+        - read-state: ${{ITERATION}}
           then:
-            - regex: "^syncjfr$"
+            - regex: "0"
               then:
-                - queue-download: ${{REPO_DIR}}/logs/jfr.${{RUNTIME_NAME}}-${{ITERATION}}.jfr
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:StartFlightRecording=filename=${{REPO_DIR}}/logs/jfr.${{RUNTIME_NAME}}-${{ITERATION}}.jfr,settings=profile,dumponexit=true -jar#'
+                - sh: rm -fR ${{AOT_OUTPUT_FOLDER}}
+                - sh: mkdir -p ${{AOT_OUTPUT_FOLDER}}
+                - sh: echo "${{RUNTIMECMD.runCmd}}"
                   then:
-                    - set-state: SYNCJFR_RUN_CMD
-                - sh: ${{SYNCJFR_RUN_CMD}} &>${{LOG_FILE}} &
-              else:
-                - sh: ${{RUNTIMECMD.runCmd}} &>${{LOG_FILE}} &
+                    - set-state: CUSTOM_RUN_CMD
+                - log: "Without any AOT flag"
+            - regex: "1"
+              then:
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER}}/training.log:level,tags -jar#'
+                  then:
+                    - set-state: CUSTOM_RUN_CMD
+                - log: "AOTCacheOutput AOT flag"
+            - regex: "2"
+              then:
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER}}/production.log:level,tags -jar#'
+                  then:
+                    - set-state: CUSTOM_RUN_CMD
+                - log: "AOTCache AOT flag"
+        - sh: ${{CUSTOM_RUN_CMD}} &>${{LOG_FILE}} &
         - sh: PID=$!
         - sh: echo $PID
         - set-state: JVM_PID
@@ -750,6 +763,7 @@ scripts:
         - sh: sleep ${{PAUSE_TIME}}
         - script: capture-otel-data
         - script: stop-test-services
+    - download: ${{AOT_OUTPUT_FOLDER}}
     - script: state-array-calc-avg
       with:
         var-name: RUN.output.results.${{RUNTIME_NAME}}.load.avThroughput
