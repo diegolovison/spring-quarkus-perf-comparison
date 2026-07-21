@@ -576,11 +576,71 @@ scripts:
     - set-state: AOT_OUTPUT_FOLDER /tmp/aot-output-folder
     - sh: rm -fR ${{AOT_OUTPUT_FOLDER}}
     - sh: mkdir -p ${{AOT_OUTPUT_FOLDER}}
+    - sh: |
+        cat << 'EOF' > ${{AOT_OUTPUT_FOLDER}}/custom.jfc
+        <?xml version="1.0" encoding="UTF-8"?>
+        <configuration version="2.0" label="Minimal JIT and GC Profiling">
+          <!-- Compilation & Deoptimization (The Core Issue) -->
+          <event name="jdk.Compilation">
+            <setting name="enabled">true</setting>
+          </event>
+          <event name="jdk.Deoptimization">
+            <setting name="enabled">true</setting>
+            <setting name="stackTrace">true</setting>
+          </event>
+
+          <!-- Code Cache Views -->
+          <event name="jdk.CodeCacheStatistics">
+            <setting name="enabled">true</setting>
+            <setting name="period">everyChunk</setting>
+          </event>
+          <event name="jdk.CodeCacheFull">
+            <setting name="enabled">true</setting>
+            <setting name="stackTrace">true</setting>
+          </event>
+          <event name="jdk.SweepCodeCache">
+            <setting name="enabled">true</setting>
+            <setting name="stackTrace">true</setting>
+          </event>
+
+          <!-- Garbage Collection Views -->
+          <event name="jdk.GarbageCollection">
+            <setting name="enabled">true</setting>
+            <setting name="threshold">0 ms</setting>
+          </event>
+          <event name="jdk.GCHeapSummary">
+            <setting name="enabled">true</setting>
+          </event>
+          <event name="jdk.MetaspaceSummary">
+            <setting name="enabled">true</setting>
+          </event>
+          <event name="jdk.GCPhasePause">
+            <setting name="enabled">true</setting>
+            <setting name="threshold">0 ms</setting>
+          </event>
+
+          <!-- Class Loading -->
+          <event name="jdk.ClassLoad">
+            <setting name="enabled">true</setting>
+            <setting name="stackTrace">true</setting>
+            <setting name="threshold">0 ms</setting>
+          </event>
+          <event name="jdk.ClassDefine">
+            <setting name="enabled">true</setting>
+            <setting name="stackTrace">true</setting>
+            <setting name="threshold">0 ms</setting>
+          </event>
+        </configuration>
+        EOF
     - for-each: ITERATION "1 2"
       then:
         - set-state:
             key: LOG_FILE
             value: ${{REPO_DIR}}/logs/load-test-${{RUNTIME_NAME}}-${{ITERATION}}.log
+        - set-state:
+            key: JFR_FILE
+            value: ${{REPO_DIR}}/logs/jfr-${{RUNTIME_NAME}}-${{ITERATION}}.jfr
+        - queue-download: ${{JFR_FILE}}
         - sh: touch ${{LOG_FILE}}
         - sh: mkdir -p ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}}
         - queue-download: ${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log
@@ -599,13 +659,13 @@ scripts:
                 - log: "Without any AOT flag"
             - regex: "1"
               then:
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER}}/training.log:level,tags -jar#'
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER}}/training.log:level,tags -jar#'
                   then:
                     - set-state: CUSTOM_RUN_CMD
                 - log: "AOTCacheOutput AOT flag"
             - regex: "2"
               then:
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER}}/production.log:level,tags -jar#'
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER}}/production.log:level,tags -jar#'
                   then:
                     - set-state: CUSTOM_RUN_CMD
                 - log: "AOTCache AOT flag"
