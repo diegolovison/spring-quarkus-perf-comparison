@@ -57,10 +57,10 @@ ergonomics:
 
 phases:
   - warmup:
-      always:
-        users: !param CONNECTIONS 100
+      increasingRate:
+        initialUsersPerSec: 1
+        targetUsersPerSec: 8000
         duration: !param WARMUP_DURATION 2m
-        maxDuration: !param WARMUP_MAX_DURATION 4m
         isWarmup: !param HIDE_WARMUP_PHASE false
         scenario:
           maxRequests: 1
