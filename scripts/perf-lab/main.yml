@@ -653,7 +653,7 @@ scripts:
           then:
             - regex: "0"
               then:
-                - sh: echo "${{RUNTIMECMD.runCmd}}"
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER}}/custom.jfc,dumponexit=true -jar#'
                   then:
                     - set-state: CUSTOM_RUN_CMD
                 - log: "Without any AOT flag"
