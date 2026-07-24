@@ -570,6 +570,7 @@ scripts:
     - sh: cd ${{RUNTIMECMD.dir}}
     - set-state: RUNTIME_NAME ${{RUNTIMECMD.name}}
     - queue-download: ${{HYPERFOIL_LOGS_DIR}}
+    - sh: jbang export fatjar --force -O /tmp/hyperfoil-run.jar run@hyperfoil
     - set-state:
         key: APP_LOG_REGEX
         value: ${{RUNTIMECMD.logFileStartedRegex}}
@@ -649,27 +650,7 @@ scripts:
         - script: sync-drop-fs-cache
         - set-signal: LOAD_STEADY_STATE_START 1
         - set-signal: LOG_REGEX_REACHED 1
-        - read-state: ${{ITERATION}}
-          then:
-            - regex: "0"
-              then:
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER}}/custom.jfc,dumponexit=true -jar#'
-                  then:
-                    - set-state: CUSTOM_RUN_CMD
-                - log: "Without any AOT flag"
-            - regex: "1"
-              then:
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER}}/training.log:level,tags -jar#'
-                  then:
-                    - set-state: CUSTOM_RUN_CMD
-                - log: "AOTCacheOutput AOT flag"
-            - regex: "2"
-              then:
-                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER}}/production.log:level,tags -jar#'
-                  then:
-                    - set-state: CUSTOM_RUN_CMD
-                - log: "AOTCache AOT flag"
-        - sh: ${{CUSTOM_RUN_CMD}} &>${{LOG_FILE}} &
+        - sh: ${{RUNTIMECMD.runCmd}} &>${{LOG_FILE}} &
         - sh: PID=$!
         - sh: echo $PID
         - set-state: JVM_PID
@@ -706,16 +687,47 @@ scripts:
             log_file: ${{LOG_FILE}}
             log_regex: ${{APP_LOG_REGEX}}
         - wait-for: LOG_REGEX_REACHED
-        - sh: |
-            ${{LOAD_GEN_CMD_PREFIX}} jbang \
-              -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
-              -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
-              -R \
-              -XX:+UseNUMA \
-              run@hyperfoil \
-                -d ${{RUNTIME_NAME}}-${{ITERATION}} \
-                -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
-                ${{LOAD_TESTS_SCRIPTS_DIR}}/load-test-fixed-threads-read-all.hf.yml &>${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log &
+        - read-state: ${{ITERATION}}
+          then:
+            - regex: "0"
+              then:
+                - sh: |
+                    ${{LOAD_GEN_CMD_PREFIX}} java \
+                      -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                      -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
+                      -XX:+UseNUMA \
+                      -Xms2g -Xmx4g \
+                      -jar /tmp/hyperfoil-run.jar \
+                        -d ${{RUNTIME_NAME}}-${{ITERATION}} \
+                        -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                        ${{LOAD_TESTS_SCRIPTS_DIR}}/load-test-fixed-threads-read-all.hf.yml >${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log 2>&1 &
+                - log: "Without any AOT flag"
+            - regex: "1"
+              then:
+                - sh: |
+                    ${{LOAD_GEN_CMD_PREFIX}} java \
+                      -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                      -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
+                      -XX:+UseNUMA \
+                      --add-modules jdk.jfr -XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER}}/training.log:level,tags \
+                      -jar /tmp/hyperfoil-run.jar \
+                        -d ${{RUNTIME_NAME}}-${{ITERATION}} \
+                        -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                        ${{LOAD_TESTS_SCRIPTS_DIR}}/load-test-fixed-threads-read-all.hf.yml >${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log 2>&1 &
+                - log: "AOTCacheOutput AOT flag"
+            - regex: "2"
+              then:
+                - sh: |
+                    ${{LOAD_GEN_CMD_PREFIX}} java \
+                      -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                      -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
+                      -XX:+UseNUMA \
+                      --add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER}}/production.log:level,tags \
+                      -jar /tmp/hyperfoil-run.jar \
+                        -d ${{RUNTIME_NAME}}-${{ITERATION}} \
+                        -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                        ${{LOAD_TESTS_SCRIPTS_DIR}}/load-test-fixed-threads-read-all.hf.yml >${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log 2>&1 &
+                - log: "AOTCache AOT flag"
         - sh: HF_PID=$! && echo $HF_PID
           then:
             - set-state: HF_PID
