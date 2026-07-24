@@ -581,8 +581,24 @@ scripts:
         cat << 'EOF' > ${{AOT_OUTPUT_FOLDER}}/custom.jfc
         <?xml version="1.0" encoding="UTF-8"?>
         <configuration version="2.0" label="Minimal JIT and GC Profiling">
-          <!-- Compilation & Deoptimization (The Core Issue) -->
+          <!-- Metadata / Context -->
+          <event name="jdk.CompilerConfiguration">
+            <setting name="enabled">true</setting>
+          </event>
+          <event name="jdk.GCConfiguration">
+            <setting name="enabled">true</setting>
+          </event>
+          <event name="jdk.GCHeapConfiguration">
+            <setting name="enabled">true</setting>
+          </event>
+        
+          <!-- Compilation & Deoptimization -->
           <event name="jdk.Compilation">
+            <setting name="enabled">true</setting>
+            <setting name="threshold">0 ms</setting>
+          </event>
+        
+          <event name="jdk.CompilerQueue">
             <setting name="enabled">true</setting>
           </event>
           <event name="jdk.Deoptimization">
