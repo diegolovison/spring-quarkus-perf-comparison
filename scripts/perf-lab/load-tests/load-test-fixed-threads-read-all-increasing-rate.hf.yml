@@ -59,7 +59,7 @@ phases:
   - warmup:
       increasingRate:
         initialUsersPerSec: 1
-        targetUsersPerSec: 8000
+        targetUsersPerSec: 7000
         duration: !param WARMUP_DURATION 2m
         isWarmup: !param HIDE_WARMUP_PHASE false
         scenario:
