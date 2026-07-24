@@ -656,7 +656,7 @@ scripts:
             value: ${{REPO_DIR}}/logs/load-test-${{RUNTIME_NAME}}-${{ITERATION}}.log
         - set-state:
             key: JFR_FILE
-            value: ${{REPO_DIR}}/logs/jfr-${{RUNTIME_NAME}}-${{ITERATION}}.jfr
+            value: ${{REPO_DIR}}/logs/jfr-hyperfoil-${{ITERATION}}.jfr
         - queue-download: ${{JFR_FILE}}
         - sh: touch ${{LOG_FILE}}
         - sh: mkdir -p ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}}
