@@ -574,11 +574,14 @@ scripts:
     - set-state:
         key: APP_LOG_REGEX
         value: ${{RUNTIMECMD.logFileStartedRegex}}
-    - set-state: AOT_OUTPUT_FOLDER /tmp/aot-output-folder
-    - sh: rm -fR ${{AOT_OUTPUT_FOLDER}}
-    - sh: mkdir -p ${{AOT_OUTPUT_FOLDER}}
+    - set-state: AOT_OUTPUT_FOLDER_QUARKUS /tmp/aot-output-folder-quarkus
+    - sh: rm -fR ${{AOT_OUTPUT_FOLDER_QUARKUS}}
+    - sh: mkdir -p ${{AOT_OUTPUT_FOLDER_QUARKUS}}
+    - set-state: AOT_OUTPUT_FOLDER_HYPERFOIL /tmp/aot-output-folder-hyperfoil
+    - sh: rm -fR ${{AOT_OUTPUT_FOLDER_HYPERFOIL}}
+    - sh: mkdir -p ${{AOT_OUTPUT_FOLDER_HYPERFOIL}}
     - sh: |
-        cat << 'EOF' > ${{AOT_OUTPUT_FOLDER}}/custom.jfc
+        cat << 'EOF' > ${{AOT_OUTPUT_FOLDER_QUARKUS}}/custom.jfc
         <?xml version="1.0" encoding="UTF-8"?>
         <configuration version="2.0" label="Minimal JIT and GC Profiling">
           <!-- Metadata / Context -->
@@ -649,7 +652,7 @@ scripts:
           </event>
         </configuration>
         EOF
-    - for-each: ITERATION "0 1 2"
+    - for-each: ITERATION "0 1 2 3"
       then:
         - set-state:
             key: LOG_FILE
@@ -666,7 +669,33 @@ scripts:
         - script: sync-drop-fs-cache
         - set-signal: LOAD_STEADY_STATE_START 1
         - set-signal: LOG_REGEX_REACHED 1
-        - sh: ${{RUNTIMECMD.runCmd}} &>${{LOG_FILE}} &
+        - read-state: ${{ITERATION}}
+          then:
+            - regex: "0"
+              then:
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER_QUARKUS}}/custom.jfc,dumponexit=true -jar#'
+                  then:
+                    - set-state: CUSTOM_RUN_CMD
+                - log: "Without any AOT flag"
+            - regex: "1"
+              then:
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER_QUARKUS}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER_QUARKUS}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER_QUARKUS}}/training.log:level,tags -jar#'
+                  then:
+                    - set-state: CUSTOM_RUN_CMD
+                - log: "AOTCacheOutput AOT flag"
+            - regex: "2"
+              then:
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#--add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER_QUARKUS}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER_QUARKUS}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER_QUARKUS}}/production.log:level,tags -jar#'
+                  then:
+                    - set-state: CUSTOM_RUN_CMD
+                - log: "AOTCache AOT flag"
+            - regex: "3"
+              then:
+                - sh: echo "${{RUNTIMECMD.runCmd}}" | sed 's#-jar#-XX:CICompilerCount=2 --add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER_QUARKUS}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER_QUARKUS}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER_QUARKUS}}/production.log:level,tags -jar#'
+                  then:
+                    - set-state: CUSTOM_RUN_CMD
+                - log: "AOTCache AOT flag"
+        - sh: ${{CUSTOM_RUN_CMD}} &>${{LOG_FILE}} &
         - sh: PID=$!
         - sh: echo $PID
         - set-state: JVM_PID
@@ -725,7 +754,7 @@ scripts:
                       -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
                       -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
                       -XX:+UseNUMA \
-                      --add-modules jdk.jfr -XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER}}/training.log:level,tags \
+                      --add-modules jdk.jfr -XX:AOTCacheOutput=${{AOT_OUTPUT_FOLDER_HYPERFOIL}}/app.aot -Xlog:aot+map=trace,aot+map+oops=trace:file=${{AOT_OUTPUT_FOLDER_HYPERFOIL}}/aot.map:none:filesize=0 -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning:file=${{AOT_OUTPUT_FOLDER_HYPERFOIL}}/training.log:level,tags \
                       -jar /tmp/hyperfoil-run.jar \
                         -d ${{RUNTIME_NAME}}-${{ITERATION}} \
                         -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
@@ -738,7 +767,21 @@ scripts:
                       -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
                       -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
                       -XX:+UseNUMA \
-                      --add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER}}/production.log:level,tags \
+                      --add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER_QUARKUS}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER_HYPERFOIL}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER_HYPERFOIL}}/production.log:level,tags \
+                      -jar /tmp/hyperfoil-run.jar \
+                        -d ${{RUNTIME_NAME}}-${{ITERATION}} \
+                        -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                        ${{LOAD_TESTS_SCRIPTS_DIR}}/load-test-fixed-threads-read-all.hf.yml >${{REPO_DIR}}/logs/hf-${{RUNTIME_NAME}}-${{ITERATION}}.log 2>&1 &
+                - log: "AOTCache AOT flag"
+            - regex: "3"
+              then:
+                - sh: |
+                    ${{LOAD_GEN_CMD_PREFIX}} java \
+                      -Dio.hyperfoil.rootdir=${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
+                      -Dio.hyperfoil.cpu.watchdog.idle.threshold=0.0 \
+                      -XX:+UseNUMA \
+                      -XX:CICompilerCount=2 \
+                      --add-modules jdk.jfr -XX:StartFlightRecording=filename=${{JFR_FILE}},settings=${{AOT_OUTPUT_FOLDER_QUARKUS}}/custom.jfc,dumponexit=true -XX:AOTMode=on -XX:AOTCache=${{AOT_OUTPUT_FOLDER_HYPERFOIL}}/app.aot -Xlog:class+load=info,aot+resolve*=trace,aot+codecache+exit=debug,aot*=warning,jit+compilation=info,deoptimization=info:file=${{AOT_OUTPUT_FOLDER_HYPERFOIL}}/production.log:level,tags \
                       -jar /tmp/hyperfoil-run.jar \
                         -d ${{RUNTIME_NAME}}-${{ITERATION}} \
                         -o ${{HYPERFOIL_LOGS_DIR}}/${{RUNTIME_NAME}}-${{ITERATION}} \
@@ -851,7 +894,8 @@ scripts:
         - sh: sleep ${{PAUSE_TIME}}
         - script: capture-otel-data
         - script: stop-test-services
-    - download: ${{AOT_OUTPUT_FOLDER}}
+    - download: ${{AOT_OUTPUT_FOLDER_QUARKUS}}
+    - download: ${{AOT_OUTPUT_FOLDER_HYPERFOIL}}
     - script: state-array-calc-avg
       with:
         var-name: RUN.output.results.${{RUNTIME_NAME}}.load.avThroughput
